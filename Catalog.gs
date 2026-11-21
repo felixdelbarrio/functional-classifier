@@ -2,8 +2,13 @@ const FC_DEFAULT_CATALOG_SHEET = 'CatalogoFuncional';
 function fcCatalogSheetName_(){
  return (PropertiesService.getScriptProperties().getProperty('FC_CATALOG_SHEET') || FC_DEFAULT_CATALOG_SHEET).trim();
 }
-function fcCatalogRows_(book){
- const name=fcCatalogSheetName_(),sh=book.getSheetByName(name);
+function fcCatalogSheetNames_(){
+ const name=fcCatalogSheetName_();
+ // The official master separates customer functionality from Core and Digital Sales.
+ return name==='Soluciones Funcionales'?[name,'Capacidades canal (core y VD)']:[name];
+}
+function fcCatalogRows_(book,name=fcCatalogSheetName_()){
+ const sh=book.getSheetByName(name);
  if(!sh)throw Error('Pestaña del catálogo ausente: '+name);
  const rows=sh.getDataRange().getDisplayValues();
  const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -25,8 +30,9 @@ function syncCatalog(){
  const lock=LockService.getScriptLock();lock.waitLock(30000);
  try{
   const book=fcBook_(),items=new Map();
-  const source=fcCatalogRows_(book);
-  for(const row of source.rows){
+  for(const name of fcCatalogSheetNames_()){
+   const source=fcCatalogRows_(book,name);
+   for(const row of source.rows){
    const get=key=>String(row[source.index[key]]||'').trim();
    const id=get('id');
    if(!id)continue;
@@ -37,9 +43,11 @@ function syncCatalog(){
    const item={id,blockName:block,functionName:name,description:get('descripcion')};
    if(items.has(id))throw Error('ID duplicado: '+id);
    items.set(id,item);
+   }
   }
   const data=[...items.values()].sort((a,b)=>a.id.localeCompare(b.id));if(!data.some(x=>x.id.startsWith('08.')))throw Error('Catálogo sin bloque 08');
   if(!data.length)throw Error('Catálogo vacío');
+  if(fcCatalogSheetName_()==='Soluciones Funcionales'&&['19.','20.'].some(prefix=>!data.some(item=>item.id.startsWith(prefix))))throw Error('Catálogo oficial incompleto: faltan Core o Venta Digital');
   // Los IDs .XX oficiales se preservan; el fallback .xx se calcula por separado.
   const payload=JSON.stringify(data);
   const revision=fcHash_(payload);
