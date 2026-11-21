@@ -47,7 +47,7 @@ function syncCatalog(){
   }
   const data=[...items.values()].sort((a,b)=>a.id.localeCompare(b.id));if(!data.some(x=>x.id.startsWith('08.')))throw Error('Catálogo sin bloque 08');
   if(!data.length)throw Error('Catálogo vacío');
-  if(fcCatalogSheetName_()==='Soluciones Funcionales'&&['19.','20.'].some(prefix=>!data.some(item=>item.id.startsWith(prefix))))throw Error('Catálogo oficial incompleto: faltan Core o Venta Digital');
+  if(fcCatalogSheetName_()==='Soluciones Funcionales'&&['19.','20.'].some(prefix=>!data.some(item=>item.id.startsWith(prefix)&&/^\d{2}\.\d{2}$/.test(item.id))))throw Error('Catálogo oficial incompleto: faltan Core o Venta Digital');
   // Los IDs .XX oficiales se preservan; el fallback .xx se calcula por separado.
   const payload=JSON.stringify(data);
   const revision=fcHash_(payload);

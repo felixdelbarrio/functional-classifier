@@ -33,3 +33,7 @@ test('explicit custom mirror remains a single-sheet source and unchanged revisio
 test('a partial Core/Digital Sales tab cannot become the active official catalog',()=>{
  const {c,tables,writes,properties}=fixture();tables.get('Capacidades canal (core y VD)').pop();assert.throws(()=>c.syncCatalog(),/Catálogo oficial incompleto/);assert.equal(writes.length,0);assert.equal(properties.FC_ACTIVE_REV,undefined);
 });
+
+test('official uppercase Otros entries do not conceal missing specific Core or Digital Sales operations',()=>{
+ const {c,tables,writes}=fixture();tables.get('Soluciones Funcionales').push(['19.XX','Core','Otros',''],['20.XX','Venta Digital','Otros','']);tables.get('Capacidades canal (core y VD)').pop();assert.throws(()=>c.syncCatalog(),/Catálogo oficial incompleto/);assert.equal(writes.length,0);
+});
