@@ -1,5 +1,5 @@
 /** Bounded headline evidence, migrated from News Radar taxonomy policy 3.38.0. */
-const fcEvidenceTAXONOMY_POLICY_=Object.freeze({maxAssignments:3});
+const FC_EVIDENCE_POLICY=Object.freeze({version:'3.38.0',maxAssignments:3});
 const fcEvidenceRankingIndexes_=new WeakMap();
 function fcEvidenceTaxonomyText_(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ı/g,'i');}
 function fcEvidenceFinancingPurpose_(value){
@@ -85,7 +85,7 @@ function fcEvidenceTaxonomyDecision_(text,definitions,headline=''){
  if(matches.length){
   const used=new Set(best.evidence.terms),ordered=ranked.filter(row=>row!==best).sort((a,b)=>b.score-a.score||a.row.subpalanca.localeCompare(b.row.subpalanca,'es'));
   for(const candidate of ordered){
-   if(matches.length>=fcEvidenceTAXONOMY_POLICY_.maxAssignments)break;
+   if(matches.length>=FC_EVIDENCE_POLICY.maxAssignments)break;
    const independent=candidate.score>=best.score*.35&&fcEvidenceTaxonomyIndependentEvidence_(candidate.evidence,[...used]);
    if(!independent)continue;
    matches.push(candidate);for(const term of candidate.evidence.terms)used.add(term);
@@ -95,7 +95,7 @@ function fcEvidenceTaxonomyDecision_(text,definitions,headline=''){
  const used=new Set(matches.flatMap(match=>match.evidence.terms));
  for(const block of index.blocks.values()){
   if(functional.staffAgent&&block.palanca.startsWith('17.')||block.palanca.startsWith('09.')&&(functional.transfer||functional.acquiring))continue;
-  if(matches.some(match=>match.row.palanca===block.palanca)||matches.length>=fcEvidenceTAXONOMY_POLICY_.maxAssignments)continue;
+  if(matches.some(match=>match.row.palanca===block.palanca)||matches.length>=FC_EVIDENCE_POLICY.maxAssignments)continue;
   const concepts=(block.emerging||[]).filter(concept=>!(functional.staffAgent&&block.palanca.startsWith('17.')&&concept.name==='Agentes de IA')&&(!concept.context?.length||fcEvidenceTaxonomyTermCounts_(text,concept.context.map(fcEvidenceTaxonomyText_)).size)&&!fcEvidenceTaxonomyTermCounts_(text,(concept.exclude||[]).map(fcEvidenceTaxonomyText_)).size);
   const terms=[...fcEvidenceTaxonomyTermCounts_(text,[...block.terms,...concepts.flatMap(concept=>concept.terms.map(fcEvidenceTaxonomyText_))]).keys()].filter(term=>fcEvidenceWords_(term).some(word=>!fcEvidenceRankingStopWords_.has(fcEvidenceRankingWord_(word))));
   const evidence={terms:terms.slice(0,3),method:'literal',location:terms.some(term=>title.includes(term))?'headline':'text'};
@@ -106,7 +106,7 @@ function fcEvidenceTaxonomyDecision_(text,definitions,headline=''){
  const financing=fcEvidenceFinancingPurpose_(text),focus=financing?{prefix:'08.',terms:[financing.evidence]}:fcEvidenceFunctionalPrimary_(headline);
  if(focus){
   const primary=financing?(financing.confirming?matches.find(match=>match.row.subpalanca.startsWith('08.37.')):null):matches.find(match=>match.row.palanca.startsWith(focus.prefix)),row=primary?.row||financing?.confirming&&definitions.find(row=>row.subpalanca.startsWith('08.37.'))||definitions.find(row=>row.palanca.startsWith(focus.prefix)&&/\.xx Otros$/.test(row.subpalanca));
-  if(row){const selected=primary||{row,count:1,score:0,evidence:{terms:focus.terms,method:'literal',location:'headline'}};const secondary=[],used=[...selected.evidence.terms];for(const match of matches)if(match!==primary&&(!financing||!/^(03|09)\./.test(match.row.palanca)||/transferencia|transfer\b/.test(match.evidence.terms.join(' ')))&&fcEvidenceTaxonomyIndependentEvidence_(match.evidence,used)){secondary.push(match);used.push(...match.evidence.terms);}matches.splice(0,matches.length,selected,...secondary.slice(0,fcEvidenceTAXONOMY_POLICY_.maxAssignments-1));}
+  if(row){const selected=primary||{row,count:1,score:0,evidence:{terms:focus.terms,method:'literal',location:'headline'}};const secondary=[],used=[...selected.evidence.terms];for(const match of matches)if(match!==primary&&(!financing||!/^(03|09)\./.test(match.row.palanca)||/transferencia|transfer\b/.test(match.evidence.terms.join(' ')))&&fcEvidenceTaxonomyIndependentEvidence_(match.evidence,used)){secondary.push(match);used.push(...match.evidence.terms);}matches.splice(0,matches.length,selected,...secondary.slice(0,FC_EVIDENCE_POLICY.maxAssignments-1));}
  }
  return {matches,reason:matches.length?'matched':ambiguous?'ambiguous':'insufficient'};
 }

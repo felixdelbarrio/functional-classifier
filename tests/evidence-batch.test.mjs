@@ -29,3 +29,7 @@ test('duplicate definitions and ambiguous reviewed codes cannot silently choose 
 test('revision drift at the end of the batch rejects the output before recording success',()=>{
  const {c,definitions,input,options,pins,events}=fixture();let calls=0;c.getClassifierRevisions=()=>({...pins,expectedRulesRevision:++calls===1?'rules':'changed'});assert.throws(()=>c.classifyEvidenceBatch([input('a','Transferencias internacionales')],definitions,options()),/PINS_CHANGED_DURING_BATCH/);assert.equal(events.length,0);
 });
+
+test('consumer aliases normalize accents and case before hashing and matching',()=>{
+ const {c,definitions,input,options}=fixture(),equivalent=plain(definitions);equivalent[2].terms=['TRANSFERENCIAS INTERNACIONALES'];assert.equal(c.getEvidenceModelRevision(equivalent),c.getEvidenceModelRevision(definitions));assert.equal(c.classifyEvidenceBatch([input('a','Transferencias internacionales')],equivalent,options()).results[0].assignments[0].id,'03.01');
+});

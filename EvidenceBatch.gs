@@ -3,7 +3,7 @@
  * Admission, geography, LLM precedence and publication remain consumer responsibilities.
  */
 function fcEvidenceStrings_(value,max=100){
- if(!Array.isArray(value)||value.length>max||value.some(x=>typeof x!=='string'||!x.trim()||x.length>200))throw Error('INVALID_EVIDENCE_TERMS');return value.slice();
+ if(!Array.isArray(value)||value.length>max||value.some(x=>typeof x!=='string'||!x.trim()||x.length>200))throw Error('INVALID_EVIDENCE_TERMS');return value.map(fcEvidenceTaxonomyText_);
 }
 function fcEvidenceModel_(definitions){
  if(!Array.isArray(definitions)||!definitions.length||definitions.length>1500)throw Error('INVALID_EVIDENCE_MODEL');
@@ -20,7 +20,7 @@ function fcEvidenceModel_(definitions){
  });
  const blocks=new Set(rows.filter(x=>!x.row.subpalanca).map(x=>x.row.palanca));
  if(rows.some(x=>!blocks.has(x.row.palanca)))throw Error('EVIDENCE_BLOCK_DEFINITION_MISSING');
- const normalized=rows.map(x=>x.normalized),revision=fcReviewHash_(JSON.stringify({schema:1,policy:'3.38.0',definitions:normalized}));
+ const normalized=rows.map(x=>x.normalized),revision=fcReviewHash_(JSON.stringify({schema:1,policy:FC_EVIDENCE_POLICY.version,definitions:normalized}));
  return {rows:rows.map(x=>x.row),byCode,revision};
 }
 function getEvidenceModelRevision(definitions){return fcEvidenceModel_(definitions).revision;}
