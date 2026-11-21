@@ -1,5 +1,5 @@
 /** Functional Classifier: ES/EN/TR, multi-label, deterministic. */
-const FC_VERSION = '5.8.1-clean-release';
+const FC_VERSION = '5.8.5-reviewed-assignments';
 function fcNorm_(value) { return String(value ?? '').replace(/İ/g,'i').replace(/I/g,'i').toLowerCase().replace(/ı/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' '); }
 function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (' '+text+' ').includes(' '+p+' '); }
 function fcRules_() {
@@ -30,10 +30,10 @@ function fcCompile_(snapshot, rules, translations) {
   for(const [id,block] of blocks){const r=rules[id]||{};block.terms=[block.name.replace(/^\d{2}\./,''),...(r.terms||[]),...((translations[id]||{}).en||[]),...((translations[id]||{}).tr||[])].map(fcNorm_).filter(x=>x.length>=4);block.exclude=(r.exclude||[]).map(fcNorm_);}
   const model={byId,blocks};model.semantic=fcBuildSemantic_(model);return model;
 }
-function fcClassify_(input,model,revision) {
- const text=fcNorm_(input.text),matched=text?fcSemanticMatches_(text,model):{ids:[],evidence:new Map()};
+function fcClassify_(input,model,revision,review=null) {
+ const text=fcNorm_(input.text),matched=review?{ids:review.ids,evidence:new Map()}:text?fcSemanticMatches_(text,model):{ids:[],evidence:new Map()};
  const assignments=matched.ids.map(id=>{const row=model.byId.get(id),block=model.blocks.get(id.slice(0,2));return {id,blockId:id.slice(0,2),blockName:block?.name||'',suboperationName:row?.functionName||'Otros',isOther:id.endsWith('.xx')};});
- const evidence=matched.ids.map(id=>({id,terms:(matched.evidence.get(id)||[]).slice(0,5),method:matched.evidence.has(id)?'literal-or-semantic':'block-fallback'}));
+ const evidence=matched.ids.map(id=>review?{id,terms:[],method:'reviewed-assignment',reference:review.reference,contentHash:review.contentHash}:{id,terms:(matched.evidence.get(id)||[]).slice(0,5),method:matched.evidence.has(id)?'literal-or-semantic':'block-fallback'});
  return {id:String(input.id),assignments,matched:assignments.length>0,evidence,revision,algorithmVersion:FC_VERSION};
 }
 function classifyText(text) {return classifyBatch([{id:'0',text}]).results[0];}
@@ -52,12 +52,31 @@ function classifyBatch(records,options) {
   if(opts.expectedRulesRevision && opts.expectedRulesRevision!==rulesRevision)throw Error('RULES_REVISION_CHANGED');
   if(opts.expectedTranslationsRevision && opts.expectedTranslationsRevision!==translationsRevision)throw Error('TRANSLATIONS_REVISION_CHANGED');
   if(opts.requireCompleteTranslations && fcMissingTranslations_(snapshot,translations).length)throw Error('TRANSLATIONS_INCOMPLETE');
-  for(const record of records){try{if(!record||record.id===undefined||typeof record.text!=='string')throw Error('id y text obligatorios');results.push(fcClassify_(record,model,snapshot.revision));}catch(e){results.push({id:String(record?.id??''),error:String(e.message),assignments:[],revision:snapshot.revision});}}
+  const reviews=fcReviewedAssignments_(opts.reviewedAssignments??[]);
+  if(reviews.items.length && opts.expectedReviewRevision!==reviews.revision)throw Error('REVIEW_REVISION_CHANGED: fijar la revisión de las adjudicaciones');
+  for(const review of reviews.items)for(const id of review.ids)if(!model.byId.has(id)&&!(/^\d{2}\.xx$/.test(id)&&model.blocks.has(id.slice(0,2))))throw Error('UNKNOWN_REVIEW_ASSIGNMENT: '+id);
+  for(const record of records){const review=reviews.byId.get(String(record.id));if(review&&review.contentHash!==fcHash_(record.text))throw Error('REVIEWED_CONTENT_CHANGED: '+record.id);}
+  for(const record of records){try{if(!record||record.id===undefined||typeof record.text!=='string')throw Error('id y text obligatorios');results.push(fcClassify_(record,model,snapshot.revision,reviews.byId.get(String(record.id))));}catch(e){results.push({id:String(record?.id??''),error:String(e.message),assignments:[],revision:snapshot.revision});}}
   const failed=results.filter(r=>r.error).length;
   if(opts.failOnRecordError && failed)throw Error('BATCH_RECORD_ERRORS: '+failed+' de '+records.length+'; no confirmar checkpoint');
   fcRecordExecution_({jobId,caller,total:records.length,processed:results.length,failed,started:start,revision:snapshot.revision});
-  return {results,revision:snapshot.revision,rulesRevision,translationsRevision,algorithmVersion:FC_VERSION,elapsedMs:Date.now()-start};
+  return {results,revision:snapshot.revision,rulesRevision,translationsRevision,algorithmVersion:FC_VERSION,...(reviews.items.length?{reviewedAssignmentsRevision:reviews.revision}:{}),elapsedMs:Date.now()-start};
 }
+
+/** Explicit, content-bound human decisions; never inferred from article IDs or topics. */
+function fcReviewedAssignments_(items){
+ if(!Array.isArray(items)||items.length>3000)throw Error('INVALID_REVIEWED_ASSIGNMENTS');
+ const byId=new Map();
+ for(const item of items){
+  if(!item||typeof item.recordId!=='string'||!item.recordId.trim()||item.recordId.length>200||byId.has(item.recordId))throw Error('INVALID_REVIEW_RECORD_ID');
+  if(typeof item.contentHash!=='string'||!/^[a-f0-9]{64}$/.test(item.contentHash)||typeof item.reference!=='string'||!item.reference.trim()||item.reference.length>160)throw Error('INVALID_REVIEW_PROVENANCE');
+  if(!Array.isArray(item.ids)||!item.ids.length||new Set(item.ids).size!==item.ids.length||item.ids.some(id=>typeof id!=='string'||!/^\d{2}\.(?:\d{2}(?:\.\d{2})?|xx|XX)$/.test(id)))throw Error('INVALID_REVIEW_ASSIGNMENTS');
+  byId.set(item.recordId,{recordId:item.recordId,contentHash:item.contentHash,ids:item.ids.slice(),reference:item.reference});
+ }
+ const normalized=[...byId.values()].sort((a,b)=>a.recordId.localeCompare(b.recordId)),revision=normalized.length?fcHash_(JSON.stringify(normalized)):null;
+ return {items:normalized,byId,revision};
+}
+function getReviewedAssignmentsRevision(items){return fcReviewedAssignments_(items).revision;}
 
 /** Obtain revisions before the first chunk; callers must pin all four for the entire job. */
 function getClassifierRevisions(){

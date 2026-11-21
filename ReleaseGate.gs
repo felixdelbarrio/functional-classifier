@@ -16,5 +16,6 @@ function fcContractTests(){
  if(other.assignments.length!==1||other.assignments[0].id!=='08.xx')throw Error('Fallo Otros');
  const none=fcClassify_({id:'z',text:'Tiempo meteorológico'},model,'test');
  if(none.assignments.length)throw Error('Falso positivo');
- return {ok:true,cases:3};
+ const reviewed=fcReviewedAssignmentContractTests();
+ return {ok:true,cases:3+reviewed.cases};
 }

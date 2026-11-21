@@ -1,4 +1,4 @@
-# Functional Classifier — versión 5.8.4
+# Functional Classifier — versión 5.8.5
 
 ## Alcance
 Biblioteca Google Apps Script independiente para categorizar textos en cero, una o varias funcionalidades del catálogo global. `NN.xx` se asigna únicamente cuando hay evidencia del bloque sin suboperativa específica. El motor **no** filtra audiencia BEI, elegibilidad de noticias ni geografía. Si no encuentra evidencia, devuelve `assignments: []` y `matched: false`. **Market Pulse debe convertir ese resultado en `Generalista` en su adaptador, no dentro de la biblioteca.**
@@ -61,3 +61,13 @@ con otros proyectos. Ejecuta `fcSetupStatus()` para consultar el avance.
 
 Nota: `fcSetup()` requiere ejecutar como administrador autorizado; no debe exponerse
 como API de clasificacion a consumidores externos.
+
+## Adjudicaciones explícitas por registro (5.8.5)
+
+`classifyBatch` y `classifyShadowBatch` admiten `reviewedAssignments`: una lista de `{recordId, contentHash, ids, reference}`. Es una decisión humana trazable, no una regla inferida del tema ni una excepción codificada por titular o ID en el motor. `contentHash` es SHA-256 hexadecimal del texto UTF-8 exacto enviado en `record.text`. El consumidor prepara esta lista desde una referencia aprobada; nunca se deduce de propuestas automáticas.
+
+Fijar `expectedReviewRevision` al resultado de `getReviewedAssignmentsRevision(reviewedAssignments)` junto con las cuatro revisiones normales. El hash incluye ID, contenido, destinos y referencia; cambia al modificar cualquiera. Sin decisiones devuelve `null`. Mantener la lista y su revisión durante todos los lotes del job. Una revisión diferente, contenido modificado o destino ausente del catálogo aborta antes de registrar la ejecución.
+
+Una adjudicación solo afecta al ID y texto exactos indicados. La evidencia usa `method: reviewed-assignment`, referencia y hash; no inventa coincidencias literales. Las categorías del catálogo conservan su ID; `NN.xx` exige que exista el bloque. La API sin adjudicaciones conserva el motor previo. No se cambia la relevancia BEI ni la elegibilidad del consumidor.
+
+Validación local: `npm run check && npm test` (Node >=24, sin dependencias adicionales). El CI ejecuta ambos comandos. Estas pruebas no autorizan una migración histórica: se requieren corpus vivo congelado, regresión por bloque/idioma y publicación de una versión inmutable fijada en cada consumidor. Esta versión de código no implica un número de versión de biblioteca ya publicado.
