@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 function fixture(baseline=false){
- const events=[],c=vm.createContext({console,Utilities:{DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_algorithm,text)=>Array.from(createHash('sha256').update(text).digest()),getUuid:()=> 'synthetic-job'}});
+ const events=[],c=vm.createContext({console,Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'UTF-8'},computeDigest:(_algorithm,text,charset)=>Array.from(createHash('sha256').update(charset==='UTF-8'?text:text.replace(/[^\x00-\x7f]/g,'?')).digest()),getUuid:()=> 'synthetic-job'}});
  for(const name of ['Catalog.gs','Classifier.gs','FunctionalEvidence.gs','SemanticEngine.gs','ClassifierTests.gs','ReleaseGate.gs']){
   const source=baseline?execFileSync('git',['show','f96510b:'+name],{cwd:new URL('../',import.meta.url),encoding:'utf8'}):fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
   vm.runInContext(source,c,{filename:name});
@@ -55,4 +55,10 @@ test('incomplete pins and malformed reviews do not produce a partial batch',()=>
  assert.throws(()=>c.classifyShadowBatch(input,{...options(),expectedAlgorithmVersion:'old'}),/ALGORITHM_VERSION_CHANGED/);
  for(const review of [{...reviews[0],contentHash:'invalid'},{...reviews[0],ids:[]},{...reviews[0],ids:['17.xx','17.xx']}])assert.throws(()=>c.getReviewedAssignmentsRevision([review]),/INVALID_REVIEW/);
  assert.throws(()=>c.classifyBatch(input,{...options(),reviewedAssignments:false}),/INVALID_REVIEWED_ASSIGNMENTS/);assert.equal(events.length,0);
+});
+
+test('reviewed text and provenance use explicit UTF-8 without changing legacy pins',()=>{
+ const {c,pins}=fixture(),text='Financiación empresarial — Türkiye',reviews=[{recordId:'utf8',contentHash:createHash('sha256').update(text).digest('hex'),ids:['17.xx'],reference:'Adjudicación explícita'}];
+ const revision=c.getReviewedAssignmentsRevision(reviews);assert.equal(revision,createHash('sha256').update(JSON.stringify(reviews)).digest('hex'));
+ const result=c.classifyShadowBatch([{id:'utf8',text}],{...pins(),reviewedAssignments:reviews,expectedReviewRevision:revision});assert.equal(result.results[0].assignments[0].id,'17.xx');assert.notEqual(c.fcHash_(text),reviews[0].contentHash);
 });

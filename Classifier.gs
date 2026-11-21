@@ -55,7 +55,7 @@ function classifyBatch(records,options) {
   const reviews=fcReviewedAssignments_(opts.reviewedAssignments??[]);
   if(reviews.items.length && opts.expectedReviewRevision!==reviews.revision)throw Error('REVIEW_REVISION_CHANGED: fijar la revisión de las adjudicaciones');
   for(const review of reviews.items)for(const id of review.ids)if(!model.byId.has(id)&&!(/^\d{2}\.xx$/.test(id)&&model.blocks.has(id.slice(0,2))))throw Error('UNKNOWN_REVIEW_ASSIGNMENT: '+id);
-  for(const record of records){const review=reviews.byId.get(String(record.id));if(review&&review.contentHash!==fcHash_(record.text))throw Error('REVIEWED_CONTENT_CHANGED: '+record.id);}
+  for(const record of records){const review=reviews.byId.get(String(record.id));if(review&&review.contentHash!==fcReviewHash_(record.text))throw Error('REVIEWED_CONTENT_CHANGED: '+record.id);}
   for(const record of records){try{if(!record||record.id===undefined||typeof record.text!=='string')throw Error('id y text obligatorios');results.push(fcClassify_(record,model,snapshot.revision,reviews.byId.get(String(record.id))));}catch(e){results.push({id:String(record?.id??''),error:String(e.message),assignments:[],revision:snapshot.revision});}}
   const failed=results.filter(r=>r.error).length;
   if(opts.failOnRecordError && failed)throw Error('BATCH_RECORD_ERRORS: '+failed+' de '+records.length+'; no confirmar checkpoint');
@@ -73,9 +73,10 @@ function fcReviewedAssignments_(items){
   if(!Array.isArray(item.ids)||!item.ids.length||new Set(item.ids).size!==item.ids.length||item.ids.some(id=>typeof id!=='string'||!/^\d{2}\.(?:\d{2}(?:\.\d{2})?|xx|XX)$/.test(id)))throw Error('INVALID_REVIEW_ASSIGNMENTS');
   byId.set(item.recordId,{recordId:item.recordId,contentHash:item.contentHash,ids:item.ids.slice(),reference:item.reference});
  }
- const normalized=[...byId.values()].sort((a,b)=>a.recordId.localeCompare(b.recordId)),revision=normalized.length?fcHash_(JSON.stringify(normalized)):null;
+ const normalized=[...byId.values()].sort((a,b)=>a.recordId.localeCompare(b.recordId)),revision=normalized.length?fcReviewHash_(JSON.stringify(normalized)):null;
  return {items:normalized,byId,revision};
 }
+function fcReviewHash_(text){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,text,Utilities.Charset.UTF_8).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');}
 function getReviewedAssignmentsRevision(items){return fcReviewedAssignments_(items).revision;}
 
 /** Obtain revisions before the first chunk; callers must pin all four for the entire job. */
