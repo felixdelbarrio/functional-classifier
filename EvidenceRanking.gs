@@ -40,7 +40,8 @@ function fcEvidenceRankingIndex_(definitions){
  const weights=new Map([...phrases].map(([term,tokens])=>[term,tokens.reduce((sum,word)=>sum+1+Math.log((1+rows.length)/(1+(frequencies.get(word)||0))),0)/Math.max(1,tokens.length)*(1+Math.log(1+tokens.length))]));
  const idf=new Map([...frequencies].map(([word,count])=>[word,1+Math.log((1+rows.length)/(1+count))]));
  const norms=new Map([...contexts].map(([row,tokens])=>[row,[...tokens].reduce((sum,word)=>sum+(idf.get(word)||0)**2,0)]));const minimumIdf=Math.min(4.8,1+Math.log((1+rows.length)/2));for(const [row,tokens] of contexts)contexts.set(row,[...tokens].filter(word=>(idf.get(word)||0)>=minimumIdf));
- index={weights,phrases,canonical,labels,contexts,norms,idf,blocks:new Map(definitions.filter(row=>!row.subpalanca).map(row=>[row.palanca,row]))};fcEvidenceRankingIndexes_.set(definitions,index);return index;
+ const terms=new Map(rows.map(row=>[row,row.terms.filter(term=>row.context?.length||phrases.get(term)?.some(word=>!fcEvidenceRankingStopWords_.has(word))||term===labels.get(row)&&phrases.get(term).length>1)]));
+ index={weights,phrases,canonical,labels,contexts,norms,idf,terms,blocks:new Map(definitions.filter(row=>!row.subpalanca).map(row=>[row.palanca,row]))};fcEvidenceRankingIndexes_.set(definitions,index);return index;
 }
 // Prefer a demonstrated customer capability over its enabling instrument.
 function fcEvidenceFunctionalPrimary_(value){
@@ -65,7 +66,7 @@ function fcEvidenceTaxonomyDecision_(text,definitions,headline=''){
   if(!row.subpalanca||/\.xx Otros$/.test(row.subpalanca))continue;
   if(row.context?.length&&!fcEvidenceTaxonomyTermCounts_(text,row.context).size||row.exclude?.length&&fcEvidenceTaxonomyTermCounts_(text,row.exclude).size)continue;
   if(/(?:^|\.)landing\b/i.test(row.subpalanca)&&!/(?:landing|dashboard|visi[oó]n integral|vista (?:global|agregada)|posici[oó]n (?:global|integrada)|aggregate|aggregated|overview|bütünleşik|genel bakış)/i.test(text))continue;
-  const terms=row.terms.filter(term=>(row.context?.length||index.phrases.get(term)?.some(word=>!fcEvidenceRankingStopWords_.has(word))||term===index.labels.get(row)&&index.phrases.get(term).length>1)&&!(row.subpalanca.startsWith('03.13.')&&functional.card&&!functional.transfer&&!/transfer|remittance/.test(term))),counts=fcEvidenceTaxonomyTermCounts_(text,terms),context=index.contexts.get(row),shared=context.filter(word=>tokens.has(word));
+  const terms=row.subpalanca.startsWith('03.13.')&&functional.card&&!functional.transfer?index.terms.get(row).filter(term=>/transfer|remittance/.test(term)):index.terms.get(row),counts=fcEvidenceTaxonomyTermCounts_(text,terms),context=index.contexts.get(row),shared=context.filter(word=>tokens.has(word));
   let semantic=0;if(shared.length>=3&&(!title||shared.some(word=>titleWords.has(word)))){const matched=shared.reduce((sum,word)=>sum+index.idf.get(word)**2,0),norm=index.norms.get(row);semantic=Math.sqrt(matched/Math.max(1,norm));}
   if(!counts.size&&semantic<.5)continue;
   const titleCounts=title?fcEvidenceTaxonomyTermCounts_(title,[...counts.keys()]):new Map();
