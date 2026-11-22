@@ -1,7 +1,8 @@
-/** Functional Classifier: ES/EN/TR, multi-label, deterministic. */
-const FC_VERSION = '5.8.5-reviewed-assignments';
-function fcNorm_(value) { return String(value ?? '').replace(/İ/g,'i').replace(/I/g,'i').toLowerCase().replace(/ı/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' '); }
-function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (' '+text+' ').includes(' '+p+' '); }
+/** Functional Classifier: multilingual evidence, multi-label, deterministic. */
+const FC_VERSION = '5.9.0-multilingual-runtime';
+function fcNorm_(value) { return String(value ?? '').replace(/İ/g,'i').replace(/I/g,'i').toLowerCase().replace(/ı/g,'i').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').trim().replace(/\s+/g,' '); }
+function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (fcUnspacedScript_(p)?text.includes(p):(' '+text+' ').includes(' '+p+' ')); }
+function fcUnspacedScript_(value){return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/u.test(value);}
 function fcRules_() {
   const sh=fcSheet_('FC_RULES',['id','terms','context','exclude']);
   const out={};
@@ -23,8 +24,8 @@ function fcCompile_(snapshot, rules, translations) {
   const byId=new Map();
   for(const item of snapshot.items) {
     const rule=rules[item.id]||{}, t=translations[item.id]||{};
-    const terms=[item.functionName,...(rule.terms||[]),...(t.en||[]),...(t.tr||[])].map(fcNorm_).filter(x=>x.length>=4);
-    byId.set(item.id,{...item,terms:[...new Set(terms)],context:(rule.context||[]).map(fcNorm_),exclude:(rule.exclude||[]).map(fcNorm_)});
+    const terms=[item.functionName,...(rule.terms||[]),...(t.en||[]),...(t.tr||[]),...fcFunctionalAliases_(item.id)].map(fcNorm_).filter(x=>x.length>=4);
+    byId.set(item.id,{...item,terms:[...new Set(terms)],context:(rule.context||[]).map(fcNorm_),exclude:[...(rule.exclude||[]),...fcFunctionalExclusions_(item.id)].map(fcNorm_)});
   }
   const blocks=new Map();for(const row of byId.values())if(!blocks.has(row.id.slice(0,2)))blocks.set(row.id.slice(0,2),{id:row.id.slice(0,2),name:row.blockName,terms:[]});
   for(const [id,block] of blocks){const r=rules[id]||{};block.terms=[block.name.replace(/^\d{2}\./,''),...(r.terms||[]),...((translations[id]||{}).en||[]),...((translations[id]||{}).tr||[])].map(fcNorm_).filter(x=>x.length>=4);block.exclude=(r.exclude||[]).map(fcNorm_);}

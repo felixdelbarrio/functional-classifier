@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 function fixture(baseline=false){
  const events=[],c=vm.createContext({console,Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'UTF-8'},computeDigest:(_algorithm,text,charset)=>Array.from(createHash('sha256').update(charset==='UTF-8'?text:text.replace(/[^\x00-\x7f]/g,'?')).digest()),getUuid:()=> 'synthetic-job'}});
- for(const name of ['Catalog.gs','Classifier.gs','FunctionalEvidence.gs','SemanticEngine.gs','ClassifierTests.gs','ReleaseGate.gs']){
+ for(const name of ['Catalog.gs',...(baseline?[]:['LanguageLexicon.gs']),'Classifier.gs','FunctionalEvidence.gs','SemanticEngine.gs','ClassifierTests.gs','ReleaseGate.gs']){
   const source=baseline?execFileSync('git',['show','f96510b:'+name],{cwd:new URL('../',import.meta.url),encoding:'utf8'}):fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
   vm.runInContext(source,c,{filename:name});
  }

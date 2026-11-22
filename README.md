@@ -73,3 +73,45 @@ Una adjudicación solo afecta al ID y texto exactos indicados. La evidencia usa 
 Validación local: `npm run check && npm test` (Node >=24, sin dependencias adicionales). El CI ejecuta ambos comandos. Estas pruebas no autorizan una migración histórica: se requieren corpus vivo congelado, regresión por bloque/idioma y publicación de una versión inmutable fijada en cada consumidor. Esta versión de código no implica un número de versión de biblioteca ya publicado.
 
 El maestro oficial configurado como `Soluciones Funcionales` se lee junto con `Capacidades canal (core y VD)`. Core (19) y Venta Digital (20) son parte del mismo snapshot y revisión; si falta una pestaña, un bloque requerido o hay IDs duplicados, syncCatalog aborta antes de persistir. Los espejos configurados con otro nombre siguen usando una sola pestaña. El cambio de código no ejecuta la sincronización ni cambia el catálogo activo: debe validarse la nueva revisión y su regresión antes de activar un consumidor.
+
+`classifyEvidenceBatch(records, definitions, options)` applies bounded headline and descriptive evidence to a consumer-owned catalog, without accepting historical article labels as model inputs. Each record supplies `id`, exact `text`, `headline`, explicit `eligible`, and `context: {digital, capabilities, signal}`. Admission, geography, LLM precedence, mapping to internal IDs and publication remain with the consumer. An approved content-bound review may classify a record without authorizing its publication.
+
+Definitions use `{block, operation, description, terms, context, exclude, emerging}`. `block` is the full numbered block name and `operation` the full numbered suboperation name (empty for the block row). Preserve the original definition order. Obtain `getEvidenceModelRevision(definitions)` and pass it as `expectedEvidenceModelRevision` alongside the four classifier pins, caller and jobId. A reviewed batch also requires `expectedReviewRevision`. The model hash binds the policy and exact normalized definitions; any pin or model drift rejects the batch before recording success. Returned full paths allow the consumer to resolve duplicate numeric block prefixes explicitly instead of silently choosing an internal ID.
+
+This additional contract does not activate a consumer or certify a migration. The active News Radar generation was replayed privately on 851 records with no category differences, but the older canonical reference (policy 3.11) still requires separate regression validation. Do not substitute active-generation parity for historical parity. Existing classifyBatch/classifyText consumers retain their functional-feedback engine.
+
+### Pure functional runtime (5.8.8)
+
+`matchFunctionalEvidence(text, definitions, headline)` exposes the same bounded
+ranking policy used by `classifyEvidenceBatch`. Definitions use the existing
+`palanca`, `subpalanca`, `terms`, `description`, optional `context`, `exclude` and
+`emerging` fields; opaque caller fields and row identity are preserved in results.
+Treat a definitions array as immutable: its normalized model is compiled once per
+execution. `getFunctionalFallback(text, labels, definitions)` applies the shared
+capability fallback without persisting assignments. `evaluateFunctionalContext`,
+`getFunctionalPrimary`, `getFunctionalFinancingPurpose`, `hasFunctionalEvidence`,
+`isIndependentFunctionalEvidence`, `normalizeFunctionalText` and
+`countFunctionalTerms` expose the supporting policy to consumers that also use it
+for admission or evidence validation. `getFunctionalRuntimePolicy()` identifies
+the policy and algorithm independently of a consumer's persisted schema version.
+
+These calls perform no Sheets, network or execution-log operations. Use a fixed
+Apps Script library version; consumers remain responsible for catalogue/model
+revisions, admission, LLM precedence, checkpoints and persisted assignment IDs.
+There is no fallback to a second local engine. The existing pinned feedback APIs
+remain compatible for independent consumers such as Market Pulse.
+
+### Reviewed multilingual lexical evidence (5.9.0)
+
+`getFunctionalLanguageLexicon()` returns a copy of the shared lexical facts for
+TR/DE/FR/IT/RO/NL, Portuguese PT/BR, Chinese simplified/traditional, Japanese,
+Korean, Indonesian, Malay, Vietnamese, Thai and Hindi. Audience, channel,
+capability, signal and exclusion vocabularies are data: the caller still decides
+relevance and geography, respecting its enabled configuration. No source text is
+translated, sent to another service or written to FC_TRANSLATIONS.
+
+The functional APIs recognize explicit international-transfer expressions in
+these languages as 03.13, with contextual exclusions. Unicode normalization keeps
+native letters/marks and folds fullwidth Latin. This is tested coverage of the
+specified concepts, not a claim that every catalogue operation has been
+translated. Original record text and reviewed UTF-8 content hashes are unchanged.
