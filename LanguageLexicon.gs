@@ -689,6 +689,22 @@ const FC_LANGUAGE_LEXICON_=Object.freeze([
   ]
  },
  {
+  "language": "en",
+  "audience": [],
+  "channel": [],
+  "capabilities": {},
+  "signals": {},
+  "internationalTransfers": [
+   "international bank transfer",
+   "international bank transfers"
+  ],
+  "excludedTransfers": [
+   "no international bank transfers"
+  ],
+  "mention": [],
+  "corporate": []
+ },
+ {
   "language": "pt-PT",
   "audience": [
    "clientes empresariais",
