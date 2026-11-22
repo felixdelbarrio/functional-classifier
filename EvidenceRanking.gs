@@ -1,7 +1,7 @@
 /** Bounded headline evidence, migrated from News Radar taxonomy policy 3.38.0. */
-const FC_EVIDENCE_POLICY=Object.freeze({version:'3.38.0',maxAssignments:3});
+const FC_EVIDENCE_POLICY=Object.freeze({version:'3.38.1',maxAssignments:3});
 const fcEvidenceRankingIndexes_=new WeakMap();
-function fcEvidenceTaxonomyText_(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ı/g,'i');}
+function fcEvidenceTaxonomyText_(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ı/g,'i').replace(/ß/g,'ss');}
 function fcEvidenceFinancingPurpose_(value){
  const text=fcEvidenceTaxonomyText_(value),match=text.match(/\b(?:fraccionar|fraccionado|aplazar|aplazado|financiar|financiado)\s+(?:el\s+|un\s+|los\s+)?(?:pago|compra|deuda)s?\b|\b(?:aplazamiento|financiacion|fraccionamiento)\s+de\s+(?:pago|compra|deuda)s?\b|\b(?:pago|compra|deuda)s?\s+(?:fraccionad[oa]s?|aplazad[oa]s?|a plazos|en cuotas)\b|\b(?:payment|purchase|debt)\s+(?:instalments?|installments?|deferral|deferred)\b|\binstal?lments? payments? plans?\b|\bdeferred payments?\b|\bbnpl\b|\bbuy now pay later\b/);
  if(!match||/\b(?:no|sin|not|without)\s+(?:(?:se|permite|ofrece|allow|offer)\s+)?(?:fraccionar|aplazar|financiar|defer|deferred|instalments?|installments?|bnpl)\b/.test(text))return null;

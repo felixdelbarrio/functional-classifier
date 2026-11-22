@@ -33,3 +33,9 @@ test('revision drift at the end of the batch rejects the output before recording
 test('consumer aliases normalize accents and case before hashing and matching',()=>{
  const {c,definitions,input,options}=fixture(),equivalent=plain(definitions);equivalent[2].terms=['TRANSFERENCIAS INTERNACIONALES'];assert.equal(c.getEvidenceModelRevision(equivalent),c.getEvidenceModelRevision(definitions));assert.equal(c.classifyEvidenceBatch([input('a','Transferencias internacionales')],equivalent,options()).results[0].assignments[0].id,'03.01');
 });
+
+test('evidence API also matches sharp s spelling variants and respects the exclusion',()=>{
+ const {c,row,input,options}=fixture(),definitions=[row('03.Pagos','',['Großzahlungen']),row('03.Pagos','03.xx Otros'),{...row('03.Pagos','03.01.Großzahlungen',['Großzahlungen']),exclude:['Testverfahren']}],opts={...options(),expectedEvidenceModelRevision:c.getEvidenceModelRevision(definitions)};
+ assert.equal(c.classifyEvidenceBatch([input('a','Grosszahlungen für Geschäftskunden')],definitions,opts).results[0].assignments[0].id,'03.01');
+ assert.equal(c.classifyEvidenceBatch([input('b','Grosszahlungen im Testverfahren')],definitions,opts).results[0].assignments.some(a=>a.id==='03.01'),false);
+});
