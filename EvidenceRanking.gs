@@ -1,5 +1,5 @@
 /** Bounded headline evidence, migrated from News Radar taxonomy policy 3.38.0. */
-const FC_EVIDENCE_POLICY=Object.freeze({version:'3.38.1',maxAssignments:3});
+const FC_EVIDENCE_POLICY=Object.freeze({version:'3.39.0',maxAssignments:3});
 const fcEvidenceRankingIndexes_=new WeakMap();
 function fcEvidenceTaxonomyText_(value){return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ı/g,'i').replace(/ß/g,'ss');}
 function fcEvidenceFinancingPurpose_(value){
@@ -19,7 +19,7 @@ function fcEvidenceFunctionalContext_(value){
  const agentBanking=agent&&(/\b(?:account balances?|transaction history|banking tasks?|saldos? de cuentas?|historial de (?:operaciones|transacciones)|banking assistants?|asistentes? bancarios?)\b/.test(text)||staffAgent);
  return {card,transfer,acquiring,api,bankingApi,agent,staffAgent,agentBanking,financing:fcEvidenceFinancingPurpose_(text)};
 }
-const fcEvidenceWords_=value=>fcEvidenceTaxonomyText_(value).match(/[a-z][a-z0-9]+/g)||[];
+const fcEvidenceWords_=value=>fcEvidenceTaxonomyText_(value).match(/[\p{L}][\p{L}\p{M}\p{N}]+/gu)||[];
 function fcEvidenceTaxonomyTermCounts_(text,terms){
  const counts=new Map();
  for(const term of terms){if(!term)continue;let at=-1,count=0;while((at=text.indexOf(term,at+1))>=0)if((at===0||!/[a-z0-9]/.test(text[at-1]))&&(at+term.length===text.length||!/[a-z0-9]/.test(text[at+term.length])))count++;if(count)counts.set(term,count);}

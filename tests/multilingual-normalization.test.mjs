@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const c=vm.createContext({});
-for(const file of ['Classifier.gs','SemanticEngine.gs','FunctionalEvidence.gs'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),c);
+for(const file of ['LanguageLexicon.gs','Classifier.gs','SemanticEngine.gs','FunctionalEvidence.gs'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),c);
 test('sharp s spelling variants retain whole words without merging neighbouring words',()=>{
  for(const text of ['Straße','STRAẞE','Strasse'])assert.equal(c.fcNorm_(text),'strasse');
  assert.equal(c.fcNorm_('Straße / Zahlungen'),'strasse zahlungen');

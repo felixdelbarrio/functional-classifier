@@ -100,3 +100,18 @@ Apps Script library version; consumers remain responsible for catalogue/model
 revisions, admission, LLM precedence, checkpoints and persisted assignment IDs.
 There is no fallback to a second local engine. The existing pinned feedback APIs
 remain compatible for independent consumers such as Market Pulse.
+
+### Reviewed multilingual lexical evidence (5.9.0)
+
+`getFunctionalLanguageLexicon()` returns a copy of the shared lexical facts for
+TR/DE/FR/IT/RO/NL, Portuguese PT/BR, Chinese simplified/traditional, Japanese,
+Korean, Indonesian, Malay, Vietnamese, Thai and Hindi. Audience, channel,
+capability, signal and exclusion vocabularies are data: the caller still decides
+relevance and geography, respecting its enabled configuration. No source text is
+translated, sent to another service or written to FC_TRANSLATIONS.
+
+The functional APIs recognize explicit international-transfer expressions in
+these languages as 03.13, with contextual exclusions. Unicode normalization keeps
+native letters/marks and folds fullwidth Latin. This is tested coverage of the
+specified concepts, not a claim that every catalogue operation has been
+translated. Original record text and reviewed UTF-8 content hashes are unchanged.

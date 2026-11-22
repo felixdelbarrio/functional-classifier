@@ -1,7 +1,7 @@
 import test from'node:test';import assert from'node:assert/strict';import fs from'node:fs';import vm from'node:vm';import{createHash}from'node:crypto';
 function fixture(){
  const events=[],c=vm.createContext({Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,value)=>[...createHash('sha256').update(value).digest()]}});
- for(const name of['Classifier.gs','EvidenceRanking.gs','EvidenceBatch.gs'])vm.runInContext(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'),c);
+ for(const name of['LanguageLexicon.gs','Classifier.gs','EvidenceRanking.gs','EvidenceBatch.gs'])vm.runInContext(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'),c);
  const pins={expectedRevision:'catalog',expectedRulesRevision:'rules',expectedTranslationsRevision:'translations',expectedAlgorithmVersion:'algorithm'};c.getClassifierRevisions=()=>({...pins});c.fcRecordExecution_=event=>events.push(event);
  const row=(block,operation,terms=[])=>({block,operation,description:'',terms,context:[],exclude:[],emerging:[]}),definitions=[row('03.Pagos','',['transferencias internacionales']),row('03.Pagos','03.xx Otros'),row('03.Pagos','03.01.Transferencias internacionales',['transferencias internacionales']),row('17.Enablers','',['canal api empresarial']),row('17.Enablers','17.xx Otros'),row('17.Enablers','17.16.API Channel',['canal api empresarial'])];
  const input=(id,text,extra={})=>({id,text,headline:text,eligible:true,context:{digital:true,capabilities:[],signal:''},...extra}),options=()=>({...pins,caller:'synthetic',jobId:'job',expectedEvidenceModelRevision:c.getEvidenceModelRevision(definitions)});

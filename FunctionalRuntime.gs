@@ -10,7 +10,7 @@ function getFunctionalPrimary(value){return fcEvidenceFunctionalPrimary_(value);
 const fcFunctionalRuntimeModels_=new WeakMap();
 function matchFunctionalEvidence(text,definitions,headline){
  let model=fcFunctionalRuntimeModels_.get(definitions);
- if(!model){const original=new Map(),rows=definitions.map(row=>{const copy={...row,terms:row.terms.map(fcEvidenceTaxonomyText_),context:(row.context||[]).map(fcEvidenceTaxonomyText_),exclude:(row.exclude||[]).map(fcEvidenceTaxonomyText_)};original.set(copy,row);return copy;});model={rows,original};fcFunctionalRuntimeModels_.set(definitions,model);}
+ if(!model){const original=new Map(),rows=definitions.map(row=>{const code=row.subpalanca?.match(/^\d{2}\.\d{2}(?=[. ]|$)/)?.[0]||'',copy={...row,terms:[...new Set([...row.terms,...fcFunctionalAliases_(code)].map(fcEvidenceTaxonomyText_))],context:(row.context||[]).map(fcEvidenceTaxonomyText_),exclude:[...(row.exclude||[]),...fcFunctionalExclusions_(code)].map(fcEvidenceTaxonomyText_)};original.set(copy,row);return copy;});model={rows,original};fcFunctionalRuntimeModels_.set(definitions,model);}
  const decision=fcEvidenceTaxonomyDecision_(fcEvidenceTaxonomyText_(text),model.rows,headline||'');
  return {...decision,matches:decision.matches.map(match=>({...match,row:model.original.get(match.row)}))};
 }

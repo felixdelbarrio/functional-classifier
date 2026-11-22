@@ -14,7 +14,7 @@ function fcEvidenceModel_(definitions){
   const key=item.block+'|'+item.operation;if(keys.has(key))throw Error('DUPLICATE_EVIDENCE_DEFINITION');keys.add(key);
   const emerging=item.emerging??[];if(!Array.isArray(emerging)||emerging.length>20)throw Error('INVALID_EVIDENCE_CONCEPTS');
   const concepts=emerging.map(concept=>{if(!concept||typeof concept.name!=='string'||!concept.name||concept.name.length>100)throw Error('INVALID_EVIDENCE_CONCEPT');return {name:concept.name,terms:fcEvidenceStrings_(concept.terms,24),context:fcEvidenceStrings_(concept.context??[],24),exclude:fcEvidenceStrings_(concept.exclude??[],24)};});
-  const normalized={block:item.block,operation:item.operation,description:item.description,terms:fcEvidenceStrings_(item.terms),context:fcEvidenceStrings_(item.context??[],24),exclude:fcEvidenceStrings_(item.exclude??[],24),emerging:concepts};
+  const normalized={block:item.block,operation:item.operation,description:item.description,terms:[...new Set([...fcEvidenceStrings_(item.terms),...fcFunctionalAliases_(code).map(fcEvidenceTaxonomyText_)])],context:fcEvidenceStrings_(item.context??[],24),exclude:[...fcEvidenceStrings_(item.exclude??[],24),...fcFunctionalExclusions_(code).map(fcEvidenceTaxonomyText_)],emerging:concepts};
   const row={id:key,palanca:normalized.block,subpalanca:normalized.operation,description:normalized.description,terms:normalized.terms,context:normalized.context,exclude:normalized.exclude,emerging:normalized.emerging,code};
   if(code){if(!byCode.has(code))byCode.set(code,[]);byCode.get(code).push(row);}return {normalized,row};
  });
