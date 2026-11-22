@@ -79,3 +79,24 @@ El maestro oficial configurado como `Soluciones Funcionales` se lee junto con `C
 Definitions use `{block, operation, description, terms, context, exclude, emerging}`. `block` is the full numbered block name and `operation` the full numbered suboperation name (empty for the block row). Preserve the original definition order. Obtain `getEvidenceModelRevision(definitions)` and pass it as `expectedEvidenceModelRevision` alongside the four classifier pins, caller and jobId. A reviewed batch also requires `expectedReviewRevision`. The model hash binds the policy and exact normalized definitions; any pin or model drift rejects the batch before recording success. Returned full paths allow the consumer to resolve duplicate numeric block prefixes explicitly instead of silently choosing an internal ID.
 
 This additional contract does not activate a consumer or certify a migration. The active News Radar generation was replayed privately on 851 records with no category differences, but the older canonical reference (policy 3.11) still requires separate regression validation. Do not substitute active-generation parity for historical parity. Existing classifyBatch/classifyText consumers retain their functional-feedback engine.
+
+### Pure functional runtime (5.8.8)
+
+`matchFunctionalEvidence(text, definitions, headline)` exposes the same bounded
+ranking policy used by `classifyEvidenceBatch`. Definitions use the existing
+`palanca`, `subpalanca`, `terms`, `description`, optional `context`, `exclude` and
+`emerging` fields; opaque caller fields and row identity are preserved in results.
+Treat a definitions array as immutable: its normalized model is compiled once per
+execution. `getFunctionalFallback(text, labels, definitions)` applies the shared
+capability fallback without persisting assignments. `evaluateFunctionalContext`,
+`getFunctionalPrimary`, `getFunctionalFinancingPurpose`, `hasFunctionalEvidence`,
+`isIndependentFunctionalEvidence`, `normalizeFunctionalText` and
+`countFunctionalTerms` expose the supporting policy to consumers that also use it
+for admission or evidence validation. `getFunctionalRuntimePolicy()` identifies
+the policy and algorithm independently of a consumer's persisted schema version.
+
+These calls perform no Sheets, network or execution-log operations. Use a fixed
+Apps Script library version; consumers remain responsible for catalogue/model
+revisions, admission, LLM precedence, checkpoints and persisted assignment IDs.
+There is no fallback to a second local engine. The existing pinned feedback APIs
+remain compatible for independent consumers such as Market Pulse.

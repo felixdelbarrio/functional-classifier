@@ -1,5 +1,5 @@
 /** Functional Classifier: ES/EN/TR, multi-label, deterministic. */
-const FC_VERSION = '5.8.7-evidence-batch';
+const FC_VERSION = '5.8.8-functional-runtime';
 function fcNorm_(value) { return String(value ?? '').replace(/İ/g,'i').replace(/I/g,'i').toLowerCase().replace(/ı/g,'i').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' '); }
 function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (' '+text+' ').includes(' '+p+' '); }
 function fcRules_() {
