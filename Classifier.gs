@@ -1,7 +1,8 @@
 /** Functional Classifier: multilingual evidence, multi-label, deterministic. */
 const FC_VERSION = '5.9.0-multilingual-runtime';
 function fcNorm_(value) { return String(value ?? '').replace(/İ/g,'i').replace(/I/g,'i').toLowerCase().replace(/ı/g,'i').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').trim().replace(/\s+/g,' '); }
-function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (' '+text+' ').includes(' '+p+' '); }
+function fcHas_(text,phrase) { const p=fcNorm_(phrase); return p.length>=3 && (fcUnspacedScript_(p)?text.includes(p):(' '+text+' ').includes(' '+p+' ')); }
+function fcUnspacedScript_(value){return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/u.test(value);}
 function fcRules_() {
   const sh=fcSheet_('FC_RULES',['id','terms','context','exclude']);
   const out={};

@@ -5,13 +5,14 @@ test('native APAC transfer evidence is recognized by the real feedback and share
  const c=runtime(),items=[{id:'03.13',blockName:'03.Pagos',functionName:'Transferencias internacionales',description:''}],definitions=[{id:'block',palanca:'03.Pagos',subpalanca:'',terms:[],emerging:[]},{id:'caller-transfer',palanca:'03.Pagos',subpalanca:'03.13.Transferencias internacionales',terms:['transferencias internacionales'],description:''},{id:'caller-other',palanca:'03.Pagos',subpalanca:'03.xx Otros',terms:[],description:''}];
  c.fcReadSnapshot_=()=>({revision:'synthetic-catalogue',items});c.fcRules_=()=>({'03.13':{terms:[]}});c.fcTranslations_=()=>({});c.fcRecordExecution_=()=>{};
  const locales=c.getFunctionalLanguageLexicon().filter(row=>['zh-Hans','zh-Hant','ja','ko','id','ms','vi','th','hi'].includes(row.language));assert.equal(locales.length,9);
- const records=locales.map(row=>({id:row.language,text:row.internationalTransfers[0]})),pins={...c.getClassifierRevisions(),caller:'test',jobId:'apac',requirePinnedRevisions:true,failOnRecordError:true},feedback=c.classifyBatch(records,pins);
+ const sentence=(language,phrase)=>language.startsWith('zh')?'企业银行'+phrase+'服务':language==='ja'?'法人向け'+phrase+'サービス':language==='ko'?phrase+'이 안 됩니다':language==='th'?'บริการ'+phrase+'สำหรับธุรกิจ':'Service '+phrase+' for businesses';
+ const records=locales.map(row=>({id:row.language,text:sentence(row.language,row.internationalTransfers[0])})),pins={...c.getClassifierRevisions(),caller:'test',jobId:'apac',requirePinnedRevisions:true,failOnRecordError:true},feedback=c.classifyBatch(records,pins);
  for(let i=0;i<records.length;i++){
   assert.deepEqual(plain(feedback.results[i].assignments.map(a=>a.id)),['03.13'],records[i].id);
   const matched=c.matchFunctionalEvidence(records[i].text,definitions,records[i].text);assert.equal(matched.matches[0].row.id,'caller-transfer',records[i].id);assert.equal(matched.matches[0].evidence.method,'literal');
   assert.equal(c.matchFunctionalEvidence(locales[i].excludedTransfers[0],definitions,'').matches.length,0,records[i].id+' exclusion');
  }
- const negated=locales.map(row=>({id:row.language,text:row.excludedTransfers[0]}));assert( c.classifyBatch(negated,{...pins,jobId:'negative'}).results.every(r=>!r.matched));
+ const negated=locales.map(row=>({id:row.language,text:sentence(row.language,row.excludedTransfers[0])}));assert( c.classifyBatch(negated,{...pins,jobId:'negative'}).results.every(r=>!r.matched));
  for(const text of ['天气预报','天気予報','날씨예보','พยากรณ์อากาศ','मौसम पूर्वानुमान'])assert.equal(c.matchFunctionalEvidence(text,definitions,text).matches.length,0);
 });
 test('Unicode normalization preserves native letters and combining marks and folds fullwidth Latin',()=>{

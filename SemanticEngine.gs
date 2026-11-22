@@ -12,23 +12,24 @@ function fcBuildSemantic_(model){
  }
  const idf=new Map([...df].map(([word,count])=>[word,1+Math.log((1+entries.length)/(1+count))]));
  const minimumIdf=Math.min(4.8,1+Math.log((1+entries.length)/2));
- const literal=new Map(),semantic=new Map();
+ const literal=new Map(),semantic=new Map(),nativeLiteral=[];
  const add=(index,key,value)=>{if(!index.has(key))index.set(key,[]);index.get(key).push(value);};
  for(const {row,descriptive} of entries){
   for(const phrase of row.terms){
    const words=phrase.split(' '),ranked=fcRankTerms_(phrase);
    const mean=ranked.length?ranked.reduce((sum,w)=>sum+(idf.get(w)||1),0)/ranked.length:1;
-   add(literal,words[0],{row,phrase,weight:mean*(1+Math.log(1+words.length))});
+   const entry={row,phrase,weight:mean*(1+Math.log(1+words.length))};add(literal,words[0],entry);if(fcUnspacedScript_(phrase))nativeLiteral.push(entry);
   }
   const norm=[...descriptive].reduce((sum,w)=>sum+(idf.get(w)||1)**2,0);
   for(const word of descriptive)if((idf.get(word)||0)>=minimumIdf)add(semantic,word,{row,norm,weight:idf.get(word)**2});
  }
- return {literal,semantic};
+ return {literal,semantic,nativeLiteral};
 }
 function fcEligible_(text,row){return (!row.context.length||row.context.some(t=>fcHas_(text,t)))&&!row.exclude.some(t=>fcHas_(text,t));}
 function fcSemanticMatches_(text,model){
  const words=[...new Set(text.split(' '))],byPhrase=new Map(),scores=new Map(),evidence=new Map();
- for(const word of words)for(const entry of model.semantic.literal.get(word)||[]){
+ const literalCandidates=new Set(words.flatMap(word=>model.semantic.literal.get(word)||[]));for(const entry of model.semantic.nativeLiteral||[])literalCandidates.add(entry);
+ for(const entry of literalCandidates){
   if(!fcHas_(text,entry.phrase)||!fcEligible_(text,entry.row))continue;
   if(!byPhrase.has(entry.phrase))byPhrase.set(entry.phrase,new Set());
   byPhrase.get(entry.phrase).add(entry.row.id);
